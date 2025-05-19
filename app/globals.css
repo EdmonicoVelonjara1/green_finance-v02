@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 142 5% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 142 5% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 142 5% 15%;
+
+    --primary: 142 70% 35%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 142 30% 96%;
+    --secondary-foreground: 142 60% 25%;
+
+    --muted: 142 5% 96%;
+    --muted-foreground: 142 3.8% 46.1%;
+
+    --accent: 142 30% 96%;
+    --accent-foreground: 142 60% 25%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 142 5.9% 90%;
+    --input: 142 5.9% 90%;
+    --ring: 142 70% 35%;
+
+    --radius: 0.5rem;
+
+    --chart-1: 142 70% 35%;
+    --chart-2: 160 64% 42%;
+    --chart-3: 120 64% 42%;
+    --chart-4: 180 64% 42%;
+
+    /* Amber color for sidebar active items */
+    --amber-700: 38 92% 50%;
+  }
+
+  .dark {
+    --background: 142 10% 10%;
+    --foreground: 142 5% 96%;
+
+    --card: 142 10% 12%;
+    --card-foreground: 142 5% 96%;
+
+    --popover: 142 10% 12%;
+    --popover-foreground: 142 5% 96%;
+
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 142 30% 20%;
+    --secondary-foreground: 142 5% 96%;
+
+    --muted: 142 5% 20%;
+    --muted-foreground: 142 5% 65%;
+
+    --accent: 142 30% 20%;
+    --accent-foreground: 142 5% 96%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 142 5% 96%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 142 5% 25%;
+    --input: 142 5% 25%;
+    --ring: 142 70% 45%;
+
+    --chart-1: 142 70% 45%;
+    --chart-2: 160 64% 52%;
+    --chart-3: 120 64% 52%;
+    --chart-4: 180 64% 52%;
+
+    /* Amber color for sidebar active items */
+    --amber-700: 38 92% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
