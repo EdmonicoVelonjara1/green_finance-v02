@@ -24,3 +24,13 @@ export async function getStockDataByTicker(tickerName: string) {
   return data;
 }
 
+export async function getYears(tickerName: string) {
+  const rows = await db.query(
+    "SELECT YEAR(date) FROM stock_market_data WHERE id_ticker IN (SELECT id FROM ticker WHERE name = ?);",
+    [tickerName]
+  );
+
+  const years: number[] = rows.map((row: any) => Object.values(row)[0] as number);
+  console.log("years",years)
+  return years;
+}

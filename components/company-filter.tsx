@@ -2,6 +2,8 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCompany } from "@/components/company-context-client"
+import { useEffect, useState } from "react"
+import { error } from "console"
 
 interface Company {
   value: string
@@ -13,7 +15,27 @@ interface CompanyFilterProps {
 }
 
 export function CompanyFilter({ companies }: CompanyFilterProps) {
+  const [years, setYears] = useState<Number[]>([])
+  const [selectedYears, setSelectedYears] = useState<number>(2024)
   const { selectedCompany, setSelectedCompany } = useCompany()
+
+  useEffect(  ()=>{
+    async function fetchYear() {
+      const response = await fetch("/api/get-year",{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company: selectedCompany
+        })
+      })
+      if(!response) {
+        console.error("Erreur",error)
+        return;
+      }
+    }
+  });
 
   return (
     <Select value={selectedCompany} onValueChange={setSelectedCompany}>

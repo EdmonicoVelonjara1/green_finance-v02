@@ -84,7 +84,7 @@ export function ReturnsChart({ data, title = "Analyse des rendements", descripti
                     type="monotone"
                     dataKey="return"
                     stroke="hsl(var(--primary))"
-                    fill={(entry) => (entry.return >= 0 ? "url(#colorPositive)" : "url(#colorNegative)")}
+                    fill="url(#colorPositive)"
                     fillOpacity={0.6}
                   />
                 </AreaChart>
