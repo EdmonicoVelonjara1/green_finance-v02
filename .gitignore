@@ -8,10 +8,10 @@
 /out/
 
 # pool sql
-/lib/
+/lib/db.ts
 
 # production
-/build/db.ts
+/build
 
 # debug
 npm-debug.log*
