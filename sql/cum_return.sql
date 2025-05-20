@@ -16,7 +16,7 @@ DELIMITER //
 CREATE FUNCTION get_cum_return(
     p_date DATE,
     p_id_ticker INT,
-    counter INT
+    -- counter INT
 )
 RETURNS JSON
 DETERMINISTIC
@@ -31,6 +31,9 @@ BEGIN
             v_low_curr, 
             v_close_curr, 
             v_adj_curr FLOAT DEFAULT 0;
+    DECLARE counter INT;
+
+    
 
     IF counter > 1 THEN
 

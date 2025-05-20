@@ -13,11 +13,3 @@ WHERE TRIGGER_SCHEMA = 'green_finance';
 SELECT TRIGGER_NAME
 FROM INFORMATION_SCHEMA.TRIGGERS
 WHERE TRIGGER_SCHEMA = 'green_finance';
-
-
--- LES ROUTINES ACTIVES
--- median, median_annual, add_statistic,
-
-
--- LES TRIGGERS
--- after_insert_statistic, 

@@ -1,10 +1,12 @@
 "use client"
 
+import { IStat } from "@/app/api/statistic/route"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { type StockData, calculateStatistics } from "@/lib/data-utils"
+// import { type StockData, calculateStatistics } from "@/lib/data-utils"
 
 interface StatisticsCardProps {
-  data: StockData[]
+  data_annual: IStat
+  // data: StockData[]
   title?: string
   description?: string
   value?: string
@@ -13,7 +15,8 @@ interface StatisticsCardProps {
 }
 
 export function StatisticsCard({
-  data,
+  data_annual,
+  // data,
   title = "Statistiques",
   description,
   value,
@@ -39,7 +42,8 @@ export function StatisticsCard({
   }
 
   // Vérifier si les données sont disponibles et non vides
-  if (!data || data.length === 0) {
+  // if (!data || data.length === 0) {
+  if(!data_annual) {
     return (
       <Card className="border-green-200 shadow-md">
         <CardHeader className="pb-2">
@@ -56,7 +60,8 @@ export function StatisticsCard({
   }
 
   // Calculer les statistiques si les données sont disponibles
-  const stats = calculateStatistics(data)
+  const stats = data_annual;
+  // calculateStatistics(data)
 
   return (
     <Card className="border-green-200 shadow-md">

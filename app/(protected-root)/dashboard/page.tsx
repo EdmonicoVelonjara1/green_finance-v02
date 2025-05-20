@@ -13,11 +13,14 @@ import { ReturnsChart } from "@/components/returns-chart"
 import { type StockData, getSimulatedDataForCompany } from "@/lib/data-utils"
 import { useCompany } from "@/components/company-context-client"
 import { CompanyFilter } from "@/components/company-filter"
+import { IStat } from "@/app/api/statistic/route"
 
 export default function DashboardPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
-  const { selectedCompany, companyMap } = useCompany()
+  const [statAnnual, setStatAnnual] = useState<IStat>()
+  
+  const { selectedCompany, companyMap, selectedYear } = useCompany()
 
   useEffect(() => {
     async function loadData() {
@@ -33,6 +36,32 @@ export default function DashboardPage() {
         setLoading(false)
       }
     }
+        async function getStatAnnual() {
+      setLoading(true)
+      try {
+          const response = await fetch("/api/statistic",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+        setStatAnnual(result.data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des données:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getStatAnnual()
 
     loadData()
   }, [selectedCompany])
@@ -79,30 +108,28 @@ export default function DashboardPage() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <StatisticsCard
-              data={stockData}
+              data_annual={statAnnual!}
               title="Prix actuel"
               value={`$${latestPrice.toFixed(2)}`}
               change={`${priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)} (${percentChange.toFixed(2)}%)`}
               isPositive={priceChange >= 0}
             />
             <StatisticsCard
-              data={stockData}
+              data_annual={statAnnual!}
               title="Volume"
               value={stockData.length > 0 ? `${(stockData[stockData.length - 1].volume / 1000000).toFixed(1)}M` : "N/A"}
               change="+5.2%"
               isPositive={true}
             />
-            <StatisticsCard
-              data={stockData}
-              title="Volatilité"
-              value={
-                stockData.length > 0
-                  ? `${((calculateStatistics(stockData).stdDev / latestPrice) * 100).toFixed(2)}%`
-                  : "N/A"
-              }
-              change="-0.5%"
-              isPositive={false}
-            />
+            {statAnnual && (
+              <StatisticsCard
+                data_annual={statAnnual}
+                title="Volatilité"
+                value={`${((statAnnual.stdDev / latestPrice) * 100).toFixed(2)}%`}
+                change="-0.5%"
+                isPositive={false}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -146,7 +173,7 @@ export default function DashboardPage() {
               <Card className="border-green-200">
                 <CardContent className="p-4">
                   <StatisticsCard
-                    data={stockData}
+                    data_annual={statAnnual!}
                     title="Statistiques détaillées"
                     description="Analyse statistique complète"
                   />

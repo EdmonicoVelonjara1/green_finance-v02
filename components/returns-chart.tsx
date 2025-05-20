@@ -6,30 +6,36 @@ import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, T
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { type StockData, calculateDailyReturns, calculateCumulativeReturns, calculateDrawdown } from "@/lib/data-utils"
+import { IDailyReturn } from "@/app/api/statistic/route"
 
 interface ReturnsChartProps {
+  daily_yield?: IDailyReturn[]
+  cum_yield?: IDailyReturn[]
   data: StockData[]
   title?: string
   description?: string
   height?: number
 }
 
-export function ReturnsChart({ data, title = "Analyse des rendements", description, height = 400 }: ReturnsChartProps) {
-  const dailyReturns = useMemo(() => {
-    const returns = calculateDailyReturns(data)
-    return returns.map((day) => ({
-      date: new Date(day.date).toISOString().split("T")[0],
-      return: day.return,
-    }))
-  }, [data])
+export function ReturnsChart({ data, daily_yield, cum_yield, title = "Analyse des rendements", description, height = 400 }: ReturnsChartProps) {
+  // const dailyReturns = useMemo(() => {
+  //   const returns = calculateDailyReturns(data)
+  //   return returns.map((day) => ({
+  //     date: new Date(day.date).toISOString().split("T")[0],
+  //     return: day.return,
+  //   }))
+  // }, [data])
+  
+  const dailyReturns = daily_yield;
+  const cumulativeReturns = cum_yield;
 
-  const cumulativeReturns = useMemo(() => {
-    const returns = calculateCumulativeReturns(data)
-    return returns.map((day) => ({
-      date: new Date(day.date).toISOString().split("T")[0],
-      return: day.return,
-    }))
-  }, [data])
+  // const cumulativeReturns = useMemo(() => {
+  //   const returns = calculateCumulativeReturns(data)
+  //   return returns.map((day) => ({
+  //     date: new Date(day.date).toISOString().split("T")[0],
+  //     return: day.return,
+  //   }))
+  // }, [data])
 
   const drawdowns = useMemo(() => {
     const dd = calculateDrawdown(data)

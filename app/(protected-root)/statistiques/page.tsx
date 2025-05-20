@@ -12,12 +12,16 @@ import { useCompany } from "@/components/company-context-client"
 import { type StockData, getSimulatedDataForCompany, calculateDailyReturns } from "@/lib/data-utils"
 import { Button } from "@/components/ui/button"
 import { CompanyFilter } from "@/components/company-filter"
+import { IDailyReturn, IStat } from "@/app/api/statistic/route"
 
 export default function StatistiquesPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
-  const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
+  const [statAnnual, setStatAnnual] = useState<IStat>()
+  const [yieldDaily, setYieldDaily] = useState<IDailyReturn[]>([])
+  const [cumReturn, setCumReturn] = useState<IDailyReturn[]>([])
 
+  const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
 
   useEffect(() => {
     async function loadData() {
@@ -45,12 +49,41 @@ export default function StatistiquesPage() {
       }
     }
 
+    async function getStatAnnual() {
+      setLoading(true)
+      try {
+          const response = await fetch("/api/statistic",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+        setStatAnnual(result.data);
+        setYieldDaily(result.yield);
+        setCumReturn(result.cumulative);
+      } catch (error) {
+        console.error("Erreur lors du chargement des données:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getStatAnnual()
     loadData()
   }, [selectedCompany, selectedYear])
 
 
   // Préparation des données pour l'histogramme des rendements
-  const dailyReturns = calculateDailyReturns(stockData)
+  // const dailyReturns = calculateDailyReturns(stockData)
+  const dailyReturns = yieldDaily;
   
   const validDailyReturns = dailyReturns.filter(
     (day) => day && typeof day.return === "number" && !isNaN(day.return)
@@ -105,23 +138,30 @@ export default function StatistiquesPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Analyse Statistique - {selectedCompany}</h1>
               <p className="text-muted-foreground">
-                Explorez les statistiques et la distribution des rendements pour Berkshire Hathaway
+                Explorez les statistiques et la distribution des rendements pour {selectedCompany}
               </p>
             </div>
-            <StatisticsCard
-              data={stockData}
-              title="Statistiques descriptives"
-              description="Mesures statistiques clés du prix de l'action"
-            />
+            {statAnnual && (
+              <StatisticsCard
+                data_annual={statAnnual}
+                title="Statistiques descriptives"
+                description="Mesures statistiques clés du prix de l'action"
+              />
+            )}
             <Tabs defaultValue="returns">
               <TabsList className="mb-4">
                 <TabsTrigger value="returns">Rendements</TabsTrigger>
-                <TabsTrigger value="distribution">Distribution</TabsTrigger>
-                <TabsTrigger value="risk">Risque</TabsTrigger>
+                {/* <TabsTrigger value="distribution">Distribution</TabsTrigger> */}
+                {/* <TabsTrigger value="risk">Risque</TabsTrigger> */}
               </TabsList>
               <TabsContent value="returns">
-                <ReturnsChart data={stockData} height={500} />
+                <ReturnsChart 
+                  daily_yield = {yieldDaily}
+                  cum_yield = {cumReturn}
+                  data={stockData} height={500} 
+                />
               </TabsContent>
+
               <TabsContent value="distribution">
                 <Card>
                   <CardHeader>
@@ -159,7 +199,7 @@ export default function StatistiquesPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                       <div className="space-y-4">
                         <div>
-                          <h3 className="text-lg font-semibold">Volatilité annualisée</h3>
+                          {/* <h3 className="text-lg font-semibold">Volatilité annualisée</h3>
                           <p className="text-2xl font-bold">
                             {(
                               Math.sqrt(252) *
@@ -169,7 +209,8 @@ export default function StatistiquesPage() {
                               )
                             ).toFixed(2)}
                             %
-                          </p>
+                          </p> */}
+
                           <p className="text-sm text-muted-foreground">
                             Mesure de la dispersion des rendements sur une base annuelle
                           </p>
