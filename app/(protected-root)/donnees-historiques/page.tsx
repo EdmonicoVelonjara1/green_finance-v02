@@ -16,6 +16,8 @@ export default function DonneesHistoriquesPage() {
   const [filteredData, setFilteredData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 20;
   const { selectedCompany, companyMap, selectedYear } = useCompany() // Call the hook unconditionally
 
   useEffect(() => {
@@ -36,12 +38,7 @@ export default function DonneesHistoriquesPage() {
           console.error("Erreur sur API:", result.error);
           return;
         }
-
         setStockData(result.data);
-
-        // Utiliser la fonction getSimulatedDataForCompany pour obtenir des données spécifiques à l'entreprise
-        // const data = getSimulatedDataForCompany(selectedCompany)
-        // setStockData(data)
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -56,7 +53,7 @@ export default function DonneesHistoriquesPage() {
     if (searchTerm) {
       const filtered = stockData.filter(
         (day) =>
-          day.date.toISOString().includes(searchTerm) ||
+          new Date(day.date).toISOString().includes(searchTerm) ||
           day.close.toString().includes(searchTerm) ||
           day.volume.toString().includes(searchTerm),
       )
@@ -65,7 +62,16 @@ export default function DonneesHistoriquesPage() {
       setFilteredData(stockData)
     }
   }, [searchTerm, stockData])
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, stockData]);
 
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
     const companies = Object.entries(companyMap).map(([value, label]) => ({
       value,
       label: `${label} (${value})`,
@@ -103,7 +109,7 @@ export default function DonneesHistoriquesPage() {
             </p>
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Données Historiques - BRK-A</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Données Historiques - {selectedCompany}</h1>
             <p className="text-muted-foreground">
               Consultez l'historique complet des prix et volumes pour Berkshire Hathaway
             </p>
@@ -111,7 +117,7 @@ export default function DonneesHistoriquesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Historique des prix</CardTitle>
-              <CardDescription>Données historiques de prix et volumes pour BRK-A</CardDescription>
+              <CardDescription>Données historiques de prix et volumes pour {selectedCompany}</CardDescription>
               <div className="relative mt-2">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -137,7 +143,7 @@ export default function DonneesHistoriquesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.slice(0, 100).map((day) => (
+                    {paginatedData.map((day) => (
                       <TableRow key={new Date(day.date).toISOString()}>
                         <TableCell>{new Date(day.date).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">${day.open.toLocaleString()}</TableCell>
@@ -151,8 +157,27 @@ export default function DonneesHistoriquesPage() {
                   </TableBody>
                 </Table>
               </div>
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </button>
+                <span>
+                  Page {currentPage} / {totalPages}
+                </span>
+                <button
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                </button>
+              </div>
               <div className="mt-4 text-center text-sm text-muted-foreground">
-                Affichage des 100 premiers résultats sur {filteredData.length} au total
+                Affichage de {paginatedData.length} résultats sur {filteredData.length} au total
               </div>
             </CardContent>
           </Card>

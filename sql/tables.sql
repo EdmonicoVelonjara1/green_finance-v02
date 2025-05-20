@@ -31,3 +31,31 @@ CREATE TABLE IF NOT EXISTS stock_market_data (
 -- Index pour optimiser les requêtes
 CREATE INDEX idx_stock_market_data_ticker_date ON stock_market_data (id_ticker, date);
 
+CREATE TABLE indicator_rsi (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_ticker INT NOT NULL,
+    loss_7 FLOAT NOT NULL DEFAULT 0,
+    gain_7 FLOAT NOT NULL DEFAULT 0,
+    rsi_7 FLOAT NOT NULL DEFAULT 0,
+    loss_14 FLOAT NOT NULL DEFAULT 0,
+    gain_14 FLOAT NOT NULL DEFAULT 0,
+    rsi_14 FLOAT NOT NULL DEFAULT 0,
+    loss_21 FLOAT NOT NULL DEFAULT 0,
+    gain_21 FLOAT NOT NULL DEFAULT 0,
+    rsi_21 FLOAT NOT NULL DEFAULT 0,
+    date DATE NOT NULL,
+    -- Optionnel : index pour accélérer les recherches par ticker et date
+    UNIQUE KEY uq_ticker_date (id_ticker, date),
+    INDEX idx_ticker (id_ticker),
+    INDEX idx_date (date)
+);
+
+DROP TABLE IF EXISTS indicator_ema;
+CREATE TABLE indicator_ema (
+    id_ticker INT NOT NULL,
+    date DATE NOT NULL,
+    ema_period INT NOT NULL,
+    ema_value FLOAT NOT NULL,
+    PRIMARY KEY (id_ticker, date, ema_period),
+    FOREIGN KEY (id_ticker) REFERENCES ticker(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

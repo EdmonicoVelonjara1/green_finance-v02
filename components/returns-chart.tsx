@@ -18,7 +18,7 @@ export function ReturnsChart({ data, title = "Analyse des rendements", descripti
   const dailyReturns = useMemo(() => {
     const returns = calculateDailyReturns(data)
     return returns.map((day) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       return: day.return,
     }))
   }, [data])
@@ -26,7 +26,7 @@ export function ReturnsChart({ data, title = "Analyse des rendements", descripti
   const cumulativeReturns = useMemo(() => {
     const returns = calculateCumulativeReturns(data)
     return returns.map((day) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       return: day.return,
     }))
   }, [data])
@@ -34,7 +34,7 @@ export function ReturnsChart({ data, title = "Analyse des rendements", descripti
   const drawdowns = useMemo(() => {
     const dd = calculateDrawdown(data)
     return dd.map((day) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       drawdown: day.drawdown,
       maxDrawdown: day.maxDrawdown,
     }))

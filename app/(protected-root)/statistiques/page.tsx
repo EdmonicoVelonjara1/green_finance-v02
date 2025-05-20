@@ -16,15 +16,28 @@ import { CompanyFilter } from "@/components/company-filter"
 export default function StatistiquesPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
-  const { selectedCompany, companyMap } = useCompany() // Moved hook outside useEffect
+  const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
+
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
-        // Utiliser la fonction getSimulatedDataForCompany pour obtenir des données spécifiques à l'entreprise
-        const data = getSimulatedDataForCompany(selectedCompany)
-        setStockData(data)
+          const response = await fetch("/api/donnees-historiques",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+        setStockData(result.data);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -33,10 +46,16 @@ export default function StatistiquesPage() {
     }
 
     loadData()
-  }, [selectedCompany])
+  }, [selectedCompany, selectedYear])
+
 
   // Préparation des données pour l'histogramme des rendements
   const dailyReturns = calculateDailyReturns(stockData)
+  
+  const validDailyReturns = dailyReturns.filter(
+    (day) => day && typeof day.return === "number" && !isNaN(day.return)
+  );
+  
   const histogramData = Array(20)
     .fill(0)
     .map((_, i) => ({
@@ -44,7 +63,7 @@ export default function StatistiquesPage() {
       count: 0,
     }))
 
-  dailyReturns.forEach((day) => {
+  validDailyReturns.forEach((day) => {
     const binIndex = Math.min(Math.max(Math.floor(day.return + 10), 0), 19)
     histogramData[binIndex].count++
   })
@@ -145,8 +164,8 @@ export default function StatistiquesPage() {
                             {(
                               Math.sqrt(252) *
                               Math.sqrt(
-                                dailyReturns.reduce((acc, day) => acc + Math.pow(day.return, 2), 0) /
-                                  dailyReturns.length,
+                                validDailyReturns.reduce((acc, day) => acc + Math.pow(day.return, 2), 0) /
+                                  validDailyReturns.length,
                               )
                             ).toFixed(2)}
                             %
@@ -156,7 +175,7 @@ export default function StatistiquesPage() {
                           </p>
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold">Drawdown maximum</h3>
+                          {/* <h3 className="text-lg font-semibold">Drawdown maximum</h3>
                           <p className="text-2xl font-bold">
                             {(() => {
                               let peak = stockData[0].close
@@ -173,6 +192,24 @@ export default function StatistiquesPage() {
 
                               return maxDrawdown.toFixed(2)
                             })()}%
+                          </p> */}
+                          <h3 className="text-lg font-semibold">Drawdown maximum</h3>
+                          <p className="text-2xl font-bold">
+                            {(() => {
+                              if (!stockData.length) return "N/A";
+                              let peak = stockData[0].close;
+                              let maxDrawdown = 0;
+
+                              stockData.forEach((day) => {
+                                if (day.close > peak) {
+                                  peak = day.close;
+                                }
+                                const drawdown = ((peak - day.close) / peak) * 100;
+                                maxDrawdown = Math.max(maxDrawdown, drawdown);
+                              });
+
+                              return maxDrawdown.toFixed(2);
+                            })()}%
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Baisse maximale par rapport au sommet précédent
@@ -185,16 +222,17 @@ export default function StatistiquesPage() {
                           <p className="text-2xl font-bold">
                             {(() => {
                               const avgReturn =
-                                dailyReturns.reduce((acc, day) => acc + day.return, 0) / dailyReturns.length
+                                validDailyReturns.reduce((acc, day) => acc + day.return, 0) / validDailyReturns.length
                               const stdDev = Math.sqrt(
-                                dailyReturns.reduce((acc, day) => acc + Math.pow(day.return - avgReturn, 2), 0) /
-                                  dailyReturns.length,
+                                validDailyReturns.reduce((acc, day) => acc + Math.pow(day.return - avgReturn, 2), 0) /
+                                  validDailyReturns.length,
                               )
 
                               // Supposons un taux sans risque de 2%
-                              const riskFreeRate = 2 / 252 // Taux journalier
-
-                              return (((avgReturn - riskFreeRate) / stdDev) * Math.sqrt(252)).toFixed(2)
+                              // const riskFreeRate = 2 / 252 // Taux journalier
+                              const riskFreeRate = 2 / 252; // Taux journalier
+                              return (((avgReturn - riskFreeRate) / stdDev) * Math.sqrt(252)).toFixed(2);
+                              // return (((avgReturn - riskFreeRate) / stdDev) * Math.sqrt(252)).toFixed(2)
                             })()}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -205,9 +243,11 @@ export default function StatistiquesPage() {
                           <h3 className="text-lg font-semibold">Value at Risk (VaR) 95%</h3>
                           <p className="text-2xl font-bold">
                             {(() => {
-                              const sortedReturns = [...dailyReturns].sort((a, b) => a.return - b.return)
+                              if (validDailyReturns.length === 0) return "N/A";
+                              const sortedReturns = [...validDailyReturns].sort((a, b) => a.return - b.return)
                               const index = Math.floor(0.05 * sortedReturns.length)
-                              return Math.abs(sortedReturns[index].return).toFixed(2)
+                              const value = sortedReturns[index]?.return
+                              return value !== undefined ? Math.abs(value).toFixed(2) : "N/A"
                             })()}%
                           </p>
                           <p className="text-sm text-muted-foreground">
