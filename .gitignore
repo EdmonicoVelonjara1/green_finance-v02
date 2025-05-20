@@ -7,8 +7,11 @@
 /.next/
 /out/
 
+# pool sql
+/lib/
+
 # production
-/build
+/build/db.ts
 
 # debug
 npm-debug.log*
