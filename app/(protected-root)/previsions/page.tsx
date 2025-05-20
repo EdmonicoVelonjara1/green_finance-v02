@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
-import { useCompany } from "@/components/company-context"
+import { useCompany } from "@/components/company-context-client"
 import { CompanyFilter } from "@/components/company-filter"
 import { type StockData, getSimulatedDataForCompany } from "@/lib/data-utils"
 import {
@@ -34,7 +34,7 @@ import {
 export default function PrevisionsPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
-  const { selectedCompany, companyName } = useCompany()
+  const { selectedCompany, companyMap } = useCompany()
 
   // Paramètres de prédiction
   const [predictionDays, setPredictionDays] = useState(30)
@@ -46,13 +46,21 @@ export default function PrevisionsPage() {
   const [confidenceLevel, setConfidenceLevel] = useState(0.95)
 
   // Données de prédiction
-  const [predictionData, setPredictionData] = useState<any[]>([])
+  type CombinedData = {
+    date: string
+    actual?: number
+    prediction?: number
+    lower?: number
+    upper?: number
+  }
+  const [predictionData, setPredictionData] = useState<CombinedData[]>([])
   const [metrics, setMetrics] = useState<any>({})
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
+
         const data = getSimulatedDataForCompany(selectedCompany)
         setStockData(data)
       } catch (error) {
@@ -64,6 +72,8 @@ export default function PrevisionsPage() {
 
     loadData()
   }, [selectedCompany])
+
+  
 
   useEffect(() => {
     if (stockData.length === 0) return
@@ -90,18 +100,22 @@ export default function PrevisionsPage() {
     const predictionsWithInterval = calculateConfidenceInterval(predictions, stdDev, confidenceLevel)
 
     // Préparer les données pour l'affichage
-    const historicalData = trainingData.slice(-30).map((day) => ({
+    const historicalData: CombinedData[] = trainingData.slice(-30).map((day) => ({
       date: day.date.toISOString().split("T")[0],
       actual: day.close,
+      prediction: undefined,
+      lower: undefined,
+      upper: undefined,
     }))
 
     // Combiner les données historiques et les prédictions
-    const combinedData = [...historicalData]
+    const combinedData: CombinedData[] = [...historicalData]
 
     // Ajouter les prédictions futures
     predictionsWithInterval.forEach((pred) => {
       combinedData.push({
         date: pred.date.toISOString().split("T")[0],
+        actual: undefined,
         prediction: pred.prediction,
         lower: pred.lower,
         upper: pred.upper,
@@ -137,14 +151,18 @@ export default function PrevisionsPage() {
     const variance = squaredDiffs.reduce((sum, d) => sum + d, 0) / returns.length
 
     return Math.sqrt(variance) * data[data.length - 1].close
-  }
+  }   
+  const companies = Object.entries(companyMap).map(([value, label]) => ({
+      value,
+      label: `${label} (${value})`,
+    }))
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-green-800">Prévisions</h1>
         <div className="flex items-center gap-3">
-          <CompanyFilter />
+          <CompanyFilter companies={companies} />
           <Button variant="outline" size="sm" className="flex items-center gap-1 text-green-700 border-green-200">
             <RefreshCw size={14} />
             <span>Actualiser</span>
@@ -500,7 +518,7 @@ export default function PrevisionsPage() {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="day" type="number" domain={[0, 30]} />
                             <YAxis domain={["auto", "auto"]} />
-                            <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, ""]} />
+                            <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, ""]} />
                             <Legend />
                             <Line
                               type="monotone"

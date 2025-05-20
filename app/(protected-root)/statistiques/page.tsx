@@ -84,7 +84,7 @@ export default function StatistiquesPage() {
         ) : (
           <div className="grid gap-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Analyse Statistique - BRK-A</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Analyse Statistique - {selectedCompany}</h1>
               <p className="text-muted-foreground">
                 Explorez les statistiques et la distribution des rendements pour Berkshire Hathaway
               </p>

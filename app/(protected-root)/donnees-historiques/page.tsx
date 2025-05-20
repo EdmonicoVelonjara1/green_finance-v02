@@ -16,15 +16,32 @@ export default function DonneesHistoriquesPage() {
   const [filteredData, setFilteredData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const { selectedCompany, companyMap } = useCompany() // Call the hook unconditionally
+  const { selectedCompany, companyMap, selectedYear } = useCompany() // Call the hook unconditionally
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
+          const response = await fetch("/api/donnees-historiques",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+
+        setStockData(result.data);
+
         // Utiliser la fonction getSimulatedDataForCompany pour obtenir des données spécifiques à l'entreprise
-        const data = getSimulatedDataForCompany(selectedCompany)
-        setStockData(data)
+        // const data = getSimulatedDataForCompany(selectedCompany)
+        // setStockData(data)
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -33,7 +50,7 @@ export default function DonneesHistoriquesPage() {
     }
 
     loadData()
-  }, [selectedCompany])
+  }, [selectedCompany, selectedYear])
 
   useEffect(() => {
     if (searchTerm) {
@@ -121,8 +138,8 @@ export default function DonneesHistoriquesPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredData.slice(0, 100).map((day) => (
-                      <TableRow key={day.date.toISOString()}>
-                        <TableCell>{day.date.toLocaleDateString()}</TableCell>
+                      <TableRow key={new Date(day.date).toISOString()}>
+                        <TableCell>{new Date(day.date).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">${day.open.toLocaleString()}</TableCell>
                         <TableCell className="text-right">${day.high.toLocaleString()}</TableCell>
                         <TableCell className="text-right">${day.low.toLocaleString()}</TableCell>
