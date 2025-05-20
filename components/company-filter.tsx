@@ -19,23 +19,23 @@ export function CompanyFilter({ companies }: CompanyFilterProps) {
   const [selectedYears, setSelectedYears] = useState<number>(2024)
   const { selectedCompany, setSelectedCompany } = useCompany()
 
-  useEffect(  ()=>{
-    async function fetchYear() {
-      const response = await fetch("/api/get-year",{
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          company: selectedCompany
-        })
-      })
-      if(!response) {
-        console.error("Erreur",error)
-        return;
-      }
-    }
-  });
+  // useEffect(  ()=>{
+  //   async function fetchYear() {
+  //     const response = await fetch("/api/get-year",{
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         company: selectedCompany
+  //       })
+  //     })
+  //     if(!response) {
+  //       console.error("Erreur",error)
+  //       return;
+  //     }
+  //   }
+  // });
 
   return (
     <Select value={selectedCompany} onValueChange={setSelectedCompany}>
