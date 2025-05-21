@@ -9,8 +9,7 @@ export async function POST(req: Request) {
     const year = body.year;
 
     const [rows]: any[] = await db.query(
-        `SELECT * FROM stock_market_data WHERE id_ticker IN 
-        (SELECT id FROM ticker WHERE name = ?) AND YEAR(date) = ?;`,
+        `SELECT * FROM story_data WHERE ticker_name = ? AND YEAR(date) = ?;`,
         [tickerName, year]
     );
     console.log("DONNEES HISTORIQUES:", rows)
