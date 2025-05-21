@@ -303,7 +303,7 @@ export default function StatistiquesPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="risk">
+              <TabsContent value="risk-info">
                 <Card>
                   <CardHeader>
                     <CardTitle>Interprétation des Statistiques</CardTitle>
