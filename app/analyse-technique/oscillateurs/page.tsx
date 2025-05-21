@@ -34,30 +34,30 @@ export default function OscillateursPage() {
   const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      try {
-          const response = await fetch("/api/donnees-historiques",{
-          method: 'POST',
-          headers: { "Content-Type": "application/json"},
-          body: JSON.stringify({
-            company: selectedCompany,
-            year: selectedYear
-          })
-        });
+    // async function loadData() {
+    //   setLoading(true)
+    //   try {
+    //       const response = await fetch("/api/donnees-historiques",{
+    //       method: 'POST',
+    //       headers: { "Content-Type": "application/json"},
+    //       body: JSON.stringify({
+    //         company: selectedCompany,
+    //         year: selectedYear
+    //       })
+    //     });
 
-        const result = await response.json();
-        if(result.error) {
-          console.error("Erreur sur API:", result.error);
-          return;
-        }
-        setStockData(result.data);
-      } catch (error) {
-        console.error("Erreur lors du chargement des données:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    //     const result = await response.json();
+    //     if(result.error) {
+    //       console.error("Erreur sur API:", result.error);
+    //       return;
+    //     }
+    //     setStockData(result.data);
+    //   } catch (error) {
+    //     console.error("Erreur lors du chargement des données:", error)
+    //   } finally {
+    //     setLoading(false)
+    //   }
+    // }
 
     const loadRsiData = async () => {
       if (!selectedCompany || !rsiPeriod) return;
@@ -67,6 +67,11 @@ export default function OscillateursPage() {
       try {
         const response = await fetch(`/api/indicator-rsi/${selectedCompany}/${rsiPeriod}`);
         const result = await response.json();
+
+        if(result.error || !result.length) {
+          console.warn("Erreur", result.error)
+          return ;
+        }
 
         const formatted = result.map((row: any) => ({
           date: row.date,
@@ -82,7 +87,7 @@ export default function OscillateursPage() {
     };
 
     loadRsiData()
-    loadData()
+    // loadData()
   }, [selectedCompany, selectedYear, rsiPeriod])
 
 

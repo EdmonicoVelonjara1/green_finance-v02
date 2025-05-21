@@ -39,7 +39,7 @@ export default function StatistiquesPage() {
 
         const result = await response.json();
         if(result.error) {
-          console.error("Erreur sur API:", result.error);
+          console.error("Erreur sur API /api/donnees-historiques:", result.error);
           return;
         }
         setStockData(result.data);
@@ -64,7 +64,7 @@ export default function StatistiquesPage() {
 
         const result = await response.json();
         if(result.error) {
-          console.error("Erreur sur API:", result.error);
+          console.error("Erreur sur API /api/statistic:", result.error);
           return;
         }
         setStatAnnual(result.data);

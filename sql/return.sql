@@ -75,26 +75,18 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS insert_yield;
 
 DELIMITER //
+CREATE PROCEDURE insert_yield(
+    IN p_id_ticker INT,
+    IN p_date DATE
+)
+BEGIN
+    DECLARE yield_val FLOAT;
 
-CREATE PROCEDURE insert_yield (
-    IN curr_date DATE,
-    IN ticker_id INT,
-    IN p_id INT
-) 
-BEGIN 
-    DECLARE counter INT;
-    DECLARE yield FLOAT;
+    SET yield_val = daily_return(p_id_ticker, p_date);
 
-    SELECT count(*) INTO counter 
-        FROM stock_market_data 
-        WHERE YEAR(date) = YEAR(curr_date) 
-        AND id_ticker = ticker_id
-        AND id <= p_id;
-
-    SET yield = (SELECT daily_return(ticker_id, counter, curr_date, p_id) FROM stock_market_data);
-
-    INSERT INTO yield (id_ticker, date, value) VALUES (ticker_id, curr_date, yield); 
-
+    INSERT INTO yield (id_ticker, date, value)
+    VALUES (p_id_ticker, p_date, yield_val)
+    ON DUPLICATE KEY UPDATE value = yield_val;
 END //
-
 DELIMITER ;
+

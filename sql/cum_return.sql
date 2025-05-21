@@ -8,49 +8,45 @@ CREATE TABLE cum_return (
     FOREIGN KEY (id_ticker) REFERENCES ticker(id) ON DELETE CASCADE
 );
 
-
 DROP FUNCTION IF EXISTS get_cum_return;
 
 DELIMITER //
 
 CREATE FUNCTION get_cum_return(
-    p_date DATE,
     p_id_ticker INT,
-    -- counter INT
+    p_date DATE
 )
-RETURNS JSON
-DETERMINISTIC
+RETURNS JSON DETERMINISTIC
 BEGIN
-    DECLARE v_open_start, 
-            v_high_start, 
-            v_low_start, 
-            v_close_start, 
-            v_adj_start FLOAT DEFAULT 0;
-    DECLARE v_open_curr, 
-            v_high_curr, 
-            v_low_curr, 
-            v_close_curr, 
-            v_adj_curr FLOAT DEFAULT 0;
-    DECLARE counter INT;
+    DECLARE v_open_start, v_high_start, v_low_start, v_close_start, v_adj_start FLOAT DEFAULT NULL;
+    DECLARE v_open_curr, v_high_curr, v_low_curr, v_close_curr, v_adj_curr FLOAT DEFAULT NULL;
 
-    
+    -- Récupérer les données actuelles
+    SELECT open, high, low, close, adj_close
+    INTO v_open_curr, v_high_curr, v_low_curr, v_close_curr, v_adj_curr
+    FROM stock_market_data
+    WHERE id_ticker = p_id_ticker AND date = p_date
+    LIMIT 1;
 
-    IF counter > 1 THEN
+    -- Récupérer les données précédentes
+    SELECT open, high, low, close, adj_close
+    INTO v_open_start, v_high_start, v_low_start, v_close_start, v_adj_start
+    FROM stock_market_data
+    WHERE id_ticker = p_id_ticker AND date < p_date
+    ORDER BY date DESC
+    LIMIT 1;
 
-        SELECT open, high, low, close, adj_close
-        INTO v_open_start, v_high_start, v_low_start, v_close_start, v_adj_start
-        FROM stock_market_data
-        WHERE id_ticker = p_id_ticker AND id = p_id - 1 AND YEAR(date) = YEAR(p_date);
-
-        -- Valeurs de la date courante
-        SELECT open, high, low, close, adj_close
-        INTO v_open_curr, v_high_curr, v_low_curr, v_close_curr, v_adj_curr
-        FROM stock_market_data
-        WHERE id_ticker = p_id_ticker AND id = p_id AND YEAR(date) = YEAR(p_date);
-    
+    -- Si pas de données précédentes, retourner 0
+    IF v_open_start IS NULL OR v_open_start = 0 THEN
+        RETURN JSON_OBJECT(
+            'open', 0,
+            'high', 0,
+            'low', 0,
+            'close', 0,
+            'adj_close', 0
+        );
     END IF;
 
-    -- Retourner les rendements sous forme JSON
     RETURN JSON_OBJECT(
         'open', (v_open_curr / v_open_start) - 1,
         'high', (v_high_curr / v_high_start) - 1,
@@ -59,7 +55,6 @@ BEGIN
         'adj_close', (v_adj_curr / v_adj_start) - 1
     );
 END //
-
 DELIMITER ;
 
 

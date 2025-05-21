@@ -1,0 +1,1 @@
+SELECT DISTINCT date, value FROM yield WHERE YEAR(date) = 2024 AND id_ticker IN (SELECT id FROM ticker WHERE name = 'MCD' );

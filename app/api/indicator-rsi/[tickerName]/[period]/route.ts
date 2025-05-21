@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
 export interface IRsiSignal {
   date: string
@@ -44,9 +45,12 @@ export async function GET(
       ORDER BY r.date ASC
     `, [tickerId, tickerId]);
 
-    return Response.json(rows, { status: 200 });
+    // return Response.json(rows, { status: 200 });
+    return NextResponse.json({
+      data: rows
+    });
   } catch (error) {
     console.error('API error:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -39,7 +39,7 @@ export function TechnicalIndicators({
   const smaData = useMemo(() => {
     const sma = calculateSMA(data, Number.parseInt(smaPeriod))
     return data.map((day, i) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       close: day.close,
       sma: sma[i].sma,
     }))
@@ -48,7 +48,7 @@ export function TechnicalIndicators({
   const emaData = useMemo(() => {
     const ema = calculateEMA(data, Number.parseInt(emaPeriod))
     return data.map((day, i) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       close: day.close,
       ema: ema[i].ema,
     }))
@@ -57,7 +57,7 @@ export function TechnicalIndicators({
   const bollingerData = useMemo(() => {
     const bollinger = calculateBollingerBands(data, Number.parseInt(bollingerPeriod))
     return data.map((day, i) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       close: day.close,
       middle: bollinger[i].middle,
       upper: bollinger[i].upper,
@@ -68,7 +68,7 @@ export function TechnicalIndicators({
   const rsiData = useMemo(() => {
     const rsi = calculateRSI(data, Number.parseInt(rsiPeriod))
     return data.map((day, i) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       rsi: rsi[i].rsi,
     }))
   }, [data, rsiPeriod])
@@ -76,7 +76,7 @@ export function TechnicalIndicators({
   const macdData = useMemo(() => {
     const macd = calculateMACD(data, Number.parseInt(macdFast), Number.parseInt(macdSlow), Number.parseInt(macdSignal))
     return data.map((day, i) => ({
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       macd: macd[i].macd,
       signal: macd[i].signal,
       histogram: macd[i].histogram,

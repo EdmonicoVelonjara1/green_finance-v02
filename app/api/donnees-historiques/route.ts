@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         `SELECT * FROM story_data WHERE ticker_name = ? AND YEAR(date) = ?;`,
         [tickerName, year]
     );
-    console.log("DONNEES HISTORIQUES:", rows)
+    // console.log("DONNEES HISTORIQUES:", rows)
 
     const stock : StockData[] = (rows as any[]).map(item => ({
         date: item.date,

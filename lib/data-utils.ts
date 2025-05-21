@@ -470,7 +470,7 @@ export function formatDataForCharts(data: StockData[]): any[] {
   if (!data || data.length === 0) return []
 
   return data.map((day) => ({
-    date: day.date.toISOString().split("T")[0],
+    date: new Date(day.date).toISOString().split("T")[0],
     open: day.open,
     high: day.high,
     low: day.low,

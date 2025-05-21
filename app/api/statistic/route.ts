@@ -56,7 +56,9 @@ export async function POST(req: Request) {
 
     if(!rows?.length || !rows_y?.length || !rows_c?.length || !rows_d?.length) {
         console.warn("Aucune donnée trouvée pour la réquête.");
-        return undefined;
+        return NextResponse.json({
+          error: undefined
+        });
     }
 
 
@@ -88,8 +90,7 @@ export async function POST(req: Request) {
         data: stats,
         yield: daily_return,
         cumulative: cum_return,
-        daily_drawdown: drawdown,
-        message: "Données envoyées avec succès", 
+        daily_drawdown: drawdown
     });
   } catch (error) {
     console.error("Erreur dans /api/get-year:", error);
