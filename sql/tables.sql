@@ -65,11 +65,11 @@ CREATE TABLE rsi_signals (
   id_rsi INT NOT NULL, -- Référence vers indicator_rsi
   signal_type VARCHAR(50) NOT NULL,
   description TEXT,
-  signal VARCHAR(50),
+  signal_label VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_rsi) REFERENCES indicator_rsi(id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE 
 )ENGINE=InnoDB;
 
 -- CREATE TABLE ema_signals (
