@@ -12,7 +12,7 @@ import { useCompany } from "@/components/company-context-client"
 import { type StockData, getSimulatedDataForCompany, calculateDailyReturns } from "@/lib/data-utils"
 import { Button } from "@/components/ui/button"
 import { CompanyFilter } from "@/components/company-filter"
-import { IDailyReturn, IStat } from "@/app/api/statistic/route"
+import { IDailyReturn, IDrawdown, IStat } from "@/app/api/statistic/route"
 
 export default function StatistiquesPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
@@ -20,6 +20,7 @@ export default function StatistiquesPage() {
   const [statAnnual, setStatAnnual] = useState<IStat>()
   const [yieldDaily, setYieldDaily] = useState<IDailyReturn[]>([])
   const [cumReturn, setCumReturn] = useState<IDailyReturn[]>([])
+  const [dailyDrawdown, setDailyDrawdown] = useState<IDrawdown[]>([])
 
   const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
 
@@ -69,6 +70,7 @@ export default function StatistiquesPage() {
         setStatAnnual(result.data);
         setYieldDaily(result.yield);
         setCumReturn(result.cumulative);
+        setDailyDrawdown(result.daily_drawdown);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -158,7 +160,8 @@ export default function StatistiquesPage() {
                 <ReturnsChart 
                   daily_yield = {yieldDaily}
                   cum_yield = {cumReturn}
-                  data={stockData} height={500} 
+                  daily_drawdown = {dailyDrawdown}
+                  // data={stockData} height={500} 
                 />
               </TabsContent>
 

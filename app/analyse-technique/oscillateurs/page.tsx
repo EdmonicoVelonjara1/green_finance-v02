@@ -11,6 +11,9 @@ import { Area, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tool
 import { useCompany } from "@/components/company-context-client"
 import { type StockData, getSimulatedDataForCompany, calculateRSI } from "@/lib/data-utils"
 import { CompanyFilter } from "@/components/company-filter"
+import { IDailyReturn, IDrawdown, IStat } from "@/app/api/statistic/route"
+import { IRsiSignal } from "@/app/api/indicator-rsi/[tickerName]/[period]/route"
+
 
 export default function OscillateursPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
@@ -18,15 +21,37 @@ export default function OscillateursPage() {
   const [rsiPeriod, setRsiPeriod] = useState("14")
   const [rsiOverbought, setRsiOverbought] = useState("70")
   const [rsiOversold, setRsiOversold] = useState("30")
+  const [rsiData, setRsiData] = useState<any[]>([])
 
-  const { selectedCompany, companyMap } = useCompany()
+  const [statAnnual, setStatAnnual] = useState<IStat>()
+  const [yieldDaily, setYieldDaily] = useState<IDailyReturn[]>([])
+  const [cumReturn, setCumReturn] = useState<IDailyReturn[]>([])
+  const [dailyDrawdown, setDailyDrawdown] = useState<IDrawdown[]>([])
+  
+  const [isSignal, setIsSignal] = useState(false)
+  const [rsiSignals, setRsiSignal] = useState<IRsiSignal[]>([])
+
+  const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
-        const data = getSimulatedDataForCompany(selectedCompany)
-        setStockData(data)
+          const response = await fetch("/api/donnees-historiques",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+        setStockData(result.data);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -34,23 +59,47 @@ export default function OscillateursPage() {
       }
     }
 
+    const loadRsiData = async () => {
+      if (!selectedCompany || !rsiPeriod) return;
+
+      setLoading(true);
+
+      try {
+        const response = await fetch(`/api/indicator-rsi/${selectedCompany}/${rsiPeriod}`);
+        const result = await response.json();
+
+        const formatted = result.map((row: any) => ({
+          date: row.date,
+          rsi: row.rsi,
+        }));
+
+        setRsiData(formatted); // Affiché dans Recharts
+      } catch (error) {
+        console.error("Erreur RSI:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRsiData()
     loadData()
-  }, [selectedCompany])
+  }, [selectedCompany, selectedYear, rsiPeriod])
+
 
   // Calculer le RSI
-  const rsiData = stockData.length > 0 ? calculateRSI(stockData, Number.parseInt(rsiPeriod)) : []
+  // const rsiData = stockData.length > 0 ? calculateRSI(stockData, Number.parseInt(rsiPeriod)) : []
 
   // Préparer les données pour le graphique
   const priceChartData = stockData.map((day, index) => {
     return {
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       price: day.close,
     }
   })
 
   const rsiChartData = rsiData.map((day) => {
     return {
-      date: day.date.toISOString().split("T")[0],
+      date: new Date(day.date).toISOString().split("T")[0],
       rsi: day.rsi,
       overbought: Number.parseInt(rsiOverbought),
       oversold: Number.parseInt(rsiOversold),
@@ -59,92 +108,105 @@ export default function OscillateursPage() {
   })
 
   // Identifier les signaux RSI
-  const rsiSignals = []
-  for (let i = 1; i < rsiChartData.length; i++) {
-    const prev = rsiChartData[i - 1]
-    const curr = rsiChartData[i]
+//   const rsiSignals = []
+//   for (let i = 1; i < rsiChartData.length; i++) {
+//     const prev = rsiChartData[i - 1]
+//     const curr = rsiChartData[i]
 
-    // Signal de survente: RSI passe sous le niveau de survente
-    if (
-      prev.rsi !== null &&
-      curr.rsi !== null &&
-      prev.rsi > Number.parseInt(rsiOversold) &&
-      curr.rsi <= Number.parseInt(rsiOversold)
-    ) {
-      rsiSignals.push({
-        date: new Date(curr.date).toLocaleDateString(),
-        type: "Survente",
-        description: `RSI est passé sous le niveau de survente (${rsiOversold})`,
-        signal: "Achat potentiel",
-      })
-    }
+//     // Signal de survente: RSI passe sous le niveau de survente
+// // ...dans la boucle for (let i = 1; i < rsiChartData.length; i++) {
+//     if (
+//       i > 10 &&
+//       curr.rsi !== null &&
+//       rsiChartData[i - 10] !== undefined &&
+//       rsiChartData[i - 10] !== null &&
+//       rsiChartData[i - 10].rsi !== null &&
+//       stockData[i] !== undefined &&
+//       stockData[i - 10] !== undefined &&
+//       typeof stockData[i]?.close === "number" &&
+//       typeof stockData[i - 10]?.close === "number" &&
+//       typeof curr.rsi === "number" &&
+//       typeof rsiChartData[i - 10]?.rsi === "number" &&
+//       rsiChartData[i - 10]?.rsi !== null &&
+//       stockData[i].close < stockData[i - 10].close &&
+//       curr.rsi > (rsiChartData[i - 10]?.rsi as number)
+//     ) {
+//       rsiSignals.push({
+//         date: new Date(curr.date).toLocaleDateString(),
+//         type: "Divergence haussière",
+//         description: `Le prix fait un nouveau plus bas mais le RSI fait un plus bas plus haut`,
+//         signal: "Achat potentiel",
+//       })
+//     }
 
-    // Signal de surachat: RSI passe au-dessus du niveau de surachat
-    if (
-      prev.rsi !== null &&
-      curr.rsi !== null &&
-      prev.rsi < Number.parseInt(rsiOverbought) &&
-      curr.rsi >= Number.parseInt(rsiOverbought)
-    ) {
-      rsiSignals.push({
-        date: new Date(curr.date).toLocaleDateString(),
-        type: "Surachat",
-        description: `RSI est passé au-dessus du niveau de surachat (${rsiOverbought})`,
-        signal: "Vente potentielle",
-      })
-    }
+//     // Signal de surachat: RSI passe au-dessus du niveau de surachat
+//     if (
+//       prev.rsi !== null &&
+//       curr.rsi !== null &&
+//       prev.rsi < Number.parseInt(rsiOverbought) &&
+//       curr.rsi >= Number.parseInt(rsiOverbought)
+//     ) {
+//       rsiSignals.push({
+//         date: new Date(curr.date).toLocaleDateString(),
+//         type: "Surachat",
+//         description: `RSI est passé au-dessus du niveau de surachat (${rsiOverbought})`,
+//         signal: "Vente potentielle",
+//       })
+//     }
 
-    // Signal de sortie de survente: RSI remonte au-dessus du niveau de survente
-    if (
-      prev.rsi !== null &&
-      curr.rsi !== null &&
-      prev.rsi <= Number.parseInt(rsiOversold) &&
-      curr.rsi > Number.parseInt(rsiOversold)
-    ) {
-      rsiSignals.push({
-        date: new Date(curr.date).toLocaleDateString(),
-        type: "Sortie de survente",
-        description: `RSI est remonté au-dessus du niveau de survente (${rsiOversold})`,
-        signal: "Confirmation d'achat",
-      })
-    }
+//     // Signal de sortie de survente: RSI remonte au-dessus du niveau de survente
+//     if (
+//       prev.rsi !== null &&
+//       curr.rsi !== null &&
+//       prev.rsi <= Number.parseInt(rsiOversold) &&
+//       curr.rsi > Number.parseInt(rsiOversold)
+//     ) {
+//       rsiSignals.push({
+//         date: new Date(curr.date).toLocaleDateString(),
+//         type: "Sortie de survente",
+//         description: `RSI est remonté au-dessus du niveau de survente (${rsiOversold})`,
+//         signal: "Confirmation d'achat",
+//       })
+//     }
 
-    // Signal de sortie de surachat: RSI redescend sous le niveau de surachat
-    if (
-      prev.rsi !== null &&
-      curr.rsi !== null &&
-      prev.rsi >= Number.parseInt(rsiOverbought) &&
-      curr.rsi < Number.parseInt(rsiOverbought)
-    ) {
-      rsiSignals.push({
-        date: new Date(curr.date).toLocaleDateString(),
-        type: "Sortie de surachat",
-        description: `RSI est redescendu sous le niveau de surachat (${rsiOverbought})`,
-        signal: "Confirmation de vente",
-      })
-    }
+//     // Signal de sortie de surachat: RSI redescend sous le niveau de surachat
+//     if (
+//       prev.rsi !== null &&
+//       curr.rsi !== null &&
+//       prev.rsi >= Number.parseInt(rsiOverbought) &&
+//       curr.rsi < Number.parseInt(rsiOverbought)
+//     ) {
+//       rsiSignals.push({
+//         date: new Date(curr.date).toLocaleDateString(),
+//         type: "Sortie de surachat",
+//         description: `RSI est redescendu sous le niveau de surachat (${rsiOverbought})`,
+//         signal: "Confirmation de vente",
+//       })
+//     }
 
-    // Divergence haussière: prix fait un nouveau plus bas mais RSI fait un plus bas plus haut
-    if (
-      i > 10 &&
-      curr.rsi !== null &&
-      rsiChartData[i - 10] !== undefined &&
-      rsiChartData[i - 10] !== null &&
-      rsiChartData[i - 10].rsi !== null &&
-      stockData[i].close < stockData[i - 10].close &&
-      typeof curr.rsi === "number" &&
-      typeof rsiChartData[i - 10]?.rsi === "number" &&
-      rsiChartData[i - 10]?.rsi !== null &&
-      curr.rsi > (rsiChartData[i - 10]?.rsi as number)
-    ) {
-      rsiSignals.push({
-        date: new Date(curr.date).toLocaleDateString(),
-        type: "Divergence haussière",
-        description: `Le prix fait un nouveau plus bas mais le RSI fait un plus bas plus haut`,
-        signal: "Achat potentiel",
-      })
-    }
-  }
+//     // Divergence haussière: prix fait un nouveau plus bas mais RSI fait un plus bas plus haut
+//     if (
+//       i > 10 &&
+//       curr.rsi !== null &&
+//       rsiChartData[i - 10] !== undefined &&
+//       rsiChartData[i - 10] !== null &&
+//       rsiChartData[i - 10].rsi !== null &&
+//       stockData[i] !== undefined &&
+//       stockData[i - 10] !== undefined &&
+//       typeof curr.rsi === "number" &&
+//       typeof rsiChartData[i - 10]?.rsi === "number" &&
+//       rsiChartData[i - 10]?.rsi !== null &&
+//       stockData[i].close < stockData[i - 10].close &&
+//       curr.rsi > (rsiChartData[i - 10]?.rsi as number)
+//     ) {
+//       rsiSignals.push({
+//         date: new Date(curr.date).toLocaleDateString(),
+//         type: "Divergence haussière",
+//         description: `Le prix fait un nouveau plus bas mais le RSI fait un plus bas plus haut`,
+//         signal: "Achat potentiel",
+//       })
+//     }
+//   }
 
   // Limiter aux 5 signaux les plus récents
   const recentRsiSignals = rsiSignals.slice(-5).reverse()

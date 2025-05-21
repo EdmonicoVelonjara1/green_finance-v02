@@ -59,3 +59,28 @@ CREATE TABLE indicator_ema (
     PRIMARY KEY (id_ticker, date, ema_period),
     FOREIGN KEY (id_ticker) REFERENCES ticker(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+CREATE TABLE rsi_signals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_rsi INT NOT NULL, -- Référence vers indicator_rsi
+  signal_type VARCHAR(50) NOT NULL,
+  description TEXT,
+  signal VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_rsi) REFERENCES indicator_rsi(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+)ENGINE=InnoDB;
+
+-- CREATE TABLE ema_signals (
+--   id INT AUTO_INCREMENT PRIMARY KEY,
+--   id_ema INT NOT NULL, -- Référence vers indicator_ema
+--   signal_type VARCHAR(50) NOT NULL,
+--   description TEXT,
+--   signal VARCHAR(50),
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--   FOREIGN KEY (id_ema) REFERENCES indicator_ema(id_ticker)
+--     ON DELETE CASCADE
+--     ON UPDATE CASCADE
+-- )ENGINE=InnoDB;
+

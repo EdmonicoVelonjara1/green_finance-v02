@@ -13,30 +13,45 @@ import { ReturnsChart } from "@/components/returns-chart"
 import { type StockData, getSimulatedDataForCompany } from "@/lib/data-utils"
 import { useCompany } from "@/components/company-context-client"
 import { CompanyFilter } from "@/components/company-filter"
-import { IStat } from "@/app/api/statistic/route"
+import { IDailyReturn, IDrawdown, IStat } from "@/app/api/statistic/route"
 
 export default function DashboardPage() {
   const [stockData, setStockData] = useState<StockData[]>([])
   const [loading, setLoading] = useState(true)
   const [statAnnual, setStatAnnual] = useState<IStat>()
-  
-  const { selectedCompany, companyMap, selectedYear } = useCompany()
+  const [yieldDaily, setYieldDaily] = useState<IDailyReturn[]>([])
+  const [cumReturn, setCumReturn] = useState<IDailyReturn[]>([])
+  const [dailyDrawdown, setDailyDrawdown] = useState<IDrawdown[]>([])
+
+  const { selectedCompany, companyMap, selectedYear } = useCompany() // Moved hook outside useEffect
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
-        // Utiliser la fonction getSimulatedDataForCompany pour obtenir des données spécifiques à l'entreprise
-        const data = getSimulatedDataForCompany(selectedCompany)
-        setStockData(data)
+          const response = await fetch("/api/donnees-historiques",{
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          body: JSON.stringify({
+            company: selectedCompany,
+            year: selectedYear
+          })
+        });
+
+        const result = await response.json();
+        if(result.error) {
+          console.error("Erreur sur API:", result.error);
+          return;
+        }
+        setStockData(result.data);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
-        setStockData([]) // Assurer que stockData est au moins un tableau vide en cas d'erreur
       } finally {
         setLoading(false)
       }
     }
-        async function getStatAnnual() {
+
+    async function getStatAnnual() {
       setLoading(true)
       try {
           const response = await fetch("/api/statistic",{
@@ -54,6 +69,9 @@ export default function DashboardPage() {
           return;
         }
         setStatAnnual(result.data);
+        setYieldDaily(result.yield);
+        setCumReturn(result.cumulative);
+        setDailyDrawdown(result.daily_drawdown);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
       } finally {
@@ -62,9 +80,8 @@ export default function DashboardPage() {
     }
 
     getStatAnnual()
-
     loadData()
-  }, [selectedCompany])
+  }, [selectedCompany, selectedYear])
 
   // Vérifier si les données sont disponibles avant de calculer les valeurs
   const latestPrice = stockData.length > 0 ? stockData[stockData.length - 1].close : 0
@@ -142,7 +159,15 @@ export default function DashboardPage() {
             <Card className="bg-white p-4 rounded-lg shadow border-green-200">
               <h2 className="text-lg font-semibold mb-4 text-green-800">Rendements</h2>
               <CardContent className="p-0">
-                <ReturnsChart data={stockData} />
+                <ReturnsChart 
+                  title="Rendements journaliers"
+                  description="Analyse des rendements journaliers de l'action"
+                  daily_yield={yieldDaily}
+                  cum_yield={cumReturn}
+                  daily_drawdown={dailyDrawdown}
+                  height={400}
+                  // data={stockData} 
+                />
               </CardContent>
             </Card>
           </div>

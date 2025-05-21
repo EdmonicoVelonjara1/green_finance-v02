@@ -1,23 +1,26 @@
 "use client"
 
-import { useMemo } from "react"
+// import { useMemo } from "react"
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { type StockData, calculateDailyReturns, calculateCumulativeReturns, calculateDrawdown } from "@/lib/data-utils"
-import { IDailyReturn } from "@/app/api/statistic/route"
+import { IDailyReturn, IDrawdown } from "@/app/api/statistic/route"
 
 interface ReturnsChartProps {
   daily_yield?: IDailyReturn[]
   cum_yield?: IDailyReturn[]
-  data: StockData[]
+  daily_drawdown: IDrawdown[]
+  // data: StockData[]
   title?: string
   description?: string
   height?: number
 }
 
-export function ReturnsChart({ data, daily_yield, cum_yield, title = "Analyse des rendements", description, height = 400 }: ReturnsChartProps) {
+export function ReturnsChart({ 
+  // data, 
+  daily_yield, cum_yield, daily_drawdown, title = "Analyse des rendements", description, height = 400 }: ReturnsChartProps) {
   // const dailyReturns = useMemo(() => {
   //   const returns = calculateDailyReturns(data)
   //   return returns.map((day) => ({
@@ -28,6 +31,7 @@ export function ReturnsChart({ data, daily_yield, cum_yield, title = "Analyse de
   
   const dailyReturns = daily_yield;
   const cumulativeReturns = cum_yield;
+  const drawdowns = daily_drawdown;
 
   // const cumulativeReturns = useMemo(() => {
   //   const returns = calculateCumulativeReturns(data)
@@ -37,14 +41,14 @@ export function ReturnsChart({ data, daily_yield, cum_yield, title = "Analyse de
   //   }))
   // }, [data])
 
-  const drawdowns = useMemo(() => {
-    const dd = calculateDrawdown(data)
-    return dd.map((day) => ({
-      date: new Date(day.date).toISOString().split("T")[0],
-      drawdown: day.drawdown,
-      maxDrawdown: day.maxDrawdown,
-    }))
-  }, [data])
+  // const drawdowns = useMemo(() => {
+  //   const dd = calculateDrawdown(data)
+  //   return dd.map((day) => ({
+  //     date: new Date(day.date).toISOString().split("T")[0],
+  //     drawdown: day.drawdown,
+  //     maxDrawdown: day.maxDrawdown,
+  //   }))
+  // }, [data])
 
   return (
     <Card>
@@ -138,11 +142,21 @@ export function ReturnsChart({ data, daily_yield, cum_yield, title = "Analyse de
                     }}
                   />
                   <YAxis domain={[0, "auto"]} />
-                  <Tooltip
+                  {/* <Tooltip
                     formatter={(value: number) => [
                       `${value.toFixed(2)}%`,
-                      value === drawdowns[0].drawdown ? "Drawdown" : "Drawdown maximum",
+                      drawdowns && drawdowns.length > 0 && value === drawdowns[0].drawdown
+                        ? "Drawdown"
+                        : "Drawdown maximum",
                     ]}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                  /> */}
+                  <Tooltip
+                    formatter={(value: number) =>
+                      typeof value === "number" && !isNaN(value)
+                        ? [`${value.toFixed(2)}%`, "Drawdown"]
+                        : [String(value), "Drawdown"]
+                    }
                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                   />
                   <Area
