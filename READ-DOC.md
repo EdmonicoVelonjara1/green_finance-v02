@@ -585,3 +585,15 @@ mysql> SELECT ROUTINE_NAME
 10 rows in set (0.00 sec)
 
 mysql>
+
+{loading ? (
+  <div className="flex h-64 items-center justify-center">
+    <div className="text-center">
+      <div className="mb-4 text-xl font-semibold text-green-700">Chargement des données...</div>
+    </div>
+  </div>
+) : (
+  <div>
+    {/* Ton contenu ici */}
+  </div>
+)}
