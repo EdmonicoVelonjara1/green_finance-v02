@@ -2,149 +2,63 @@
 
 import { useEffect, useState } from "react"
 import { RefreshCw } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { useCompany } from "@/components/company-context-client"
-import { type StockData, calculateSMA, calculateEMA, getSimulatedDataForCompany } from "@/lib/data-utils"
 import { CompanyFilter } from "@/components/company-filter"
 
 export default function MoyennesMobilesPage() {
-  const [stockData, setStockData] = useState<StockData[]>([])
+  const [stockData, setStockData] = useState<any[]>([]) // Adjusted to handle API response
+  const [recentCrossovers, setRecentCrossovers] = useState<any[]>([]) // State for crossovers
   const [loading, setLoading] = useState(true)
   const [smaPeriod1, setSmaPeriod1] = useState("20")
   const [smaPeriod2, setSmaPeriod2] = useState("50")
   const [smaPeriod3, setSmaPeriod3] = useState("200")
   const [emaPeriod1, setEmaPeriod1] = useState("12")
   const [emaPeriod2, setEmaPeriod2] = useState("26")
-
   const { selectedCompany, companyMap } = useCompany()
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
-        const data = getSimulatedDataForCompany(selectedCompany)
-        setStockData(data)
+        const response = await fetch(
+          `/api/moving-averages?ticker=${selectedCompany}&smaPeriods=${smaPeriod1},${smaPeriod2},${smaPeriod3}&emaPeriods=${emaPeriod1},${emaPeriod2}`
+        )
+        const { chartData, crossovers } = await response.json()
+        setStockData(chartData)
+        setRecentCrossovers(crossovers)
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
+        setStockData([])
+        setRecentCrossovers([])
       } finally {
         setLoading(false)
       }
     }
 
     loadData()
-  }, [selectedCompany])
+  }, [selectedCompany, smaPeriod1, smaPeriod2, smaPeriod3, emaPeriod1, emaPeriod2])
 
-  // Calculer les moyennes mobiles simples
-  const sma1Data = stockData.length > 0 ? calculateSMA(stockData, Number.parseInt(smaPeriod1)) : []
-  const sma2Data = stockData.length > 0 ? calculateSMA(stockData, Number.parseInt(smaPeriod2)) : []
-  const sma3Data = stockData.length > 0 ? calculateSMA(stockData, Number.parseInt(smaPeriod3)) : []
-
-  // Calculer les moyennes mobiles exponentielles
-  const ema1Data = stockData.length > 0 ? calculateEMA(stockData, Number.parseInt(emaPeriod1)) : []
-  const ema2Data = stockData.length > 0 ? calculateEMA(stockData, Number.parseInt(emaPeriod2)) : []
-
-  // Préparer les données pour le graphique
-  const chartData = stockData.map((day, index) => {
-    return {
-      date: day.date.toISOString().split("T")[0],
-      price: day.close,
-      sma1: sma1Data[index]?.sma || null,
-      sma2: sma2Data[index]?.sma || null,
-      sma3: sma3Data[index]?.sma || null,
-      ema1: ema1Data[index]?.ema || null,
-      ema2: ema2Data[index]?.ema || null,
-    }
-  })
-
-  // Analyser les croisements de moyennes mobiles
-  const crossovers = []
-  if (chartData.length > 0) {
-    for (let i = 1; i < chartData.length; i++) {
-      const prev = chartData[i - 1]
-      const curr = chartData[i]
-
-      // Croisement SMA courte/moyenne (signal haussier)
-      if (
-        prev.sma1 !== null &&
-        prev.sma2 !== null &&
-        curr.sma1 !== null &&
-        curr.sma2 !== null &&
-        prev.sma1 < prev.sma2 &&
-        curr.sma1 > curr.sma2
-      ) {
-        crossovers.push({
-          date: new Date(curr.date).toLocaleDateString(),
-          type: "Croisement haussier",
-          description: `SMA${smaPeriod1} a croisé au-dessus de SMA${smaPeriod2}`,
-          signal: "Achat",
-        })
-      }
-
-      // Croisement SMA courte/moyenne (signal baissier)
-      if (
-        prev.sma1 !== null &&
-        prev.sma2 !== null &&
-        curr.sma1 !== null &&
-        curr.sma2 !== null &&
-        prev.sma1 > prev.sma2 &&
-        curr.sma1 < curr.sma2
-      ) {
-        crossovers.push({
-          date: new Date(curr.date).toLocaleDateString(),
-          type: "Croisement baissier",
-          description: `SMA${smaPeriod1} a croisé en-dessous de SMA${smaPeriod2}`,
-          signal: "Vente",
-        })
-      }
-
-      // Croisement EMA (signal haussier)
-      if (
-        prev.ema1 !== null &&
-        prev.ema2 !== null &&
-        curr.ema1 !== null &&
-        curr.ema2 !== null &&
-        prev.ema1 < prev.ema2 &&
-        curr.ema1 > curr.ema2
-      ) {
-        crossovers.push({
-          date: new Date(curr.date).toLocaleDateString(),
-          type: "Croisement EMA haussier",
-          description: `EMA${emaPeriod1} a croisé au-dessus de EMA${emaPeriod2}`,
-          signal: "Achat",
-        })
-      }
-
-      // Croisement EMA (signal baissier)
-      if (
-        prev.ema1 !== null &&
-        prev.ema2 !== null &&
-        curr.ema1 !== null &&
-        curr.ema2 !== null &&
-        prev.ema1 > prev.ema2 &&
-        curr.ema1 < curr.ema2
-      ) {
-        crossovers.push({
-          date: new Date(curr.date).toLocaleDateString(),
-          type: "Croisement EMA baissier",
-          description: `EMA${emaPeriod1} a croisé en-dessous de EMA${emaPeriod2}`,
-          signal: "Vente",
-        })
-      }
-    }
-  }
-
-  // Limiter aux 5 croisements les plus récents
-  const recentCrossovers = crossovers.slice(-5).reverse()
-    const companies = Object.entries(companyMap).map(([value, label]) => ({
-      value,
-      label: `${label} (${value})`,
+  // Préparer les données pour le graphique (using API data directly)
+  const chartData = stockData.map((item: any) => ({
+    date: item.date,
+    price: item.price,
+    sma1: item.sma1,
+    sma2: item.sma2,
+    sma3: item.sma3,
+    ema1: item.ema1,
+    ema2: item.ema2,
   }))
-  // const companyName = companyMap[selectedCompany] || selectedCompany
+
+  const companies = Object.entries(companyMap).map(([value, label]) => ({
+    value,
+    label: `${label} (${value})`,
+  }))
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -446,7 +360,7 @@ export default function MoyennesMobilesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentCrossovers.map((crossover, index) => (
+                      {recentCrossovers.map((crossover: any, index: number) => (
                         <tr key={index} className="border-b border-green-50">
                           <td className="p-2 text-gray-700">{crossover.date}</td>
                           <td className="p-2 text-gray-700">{crossover.type}</td>
